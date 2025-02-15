@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import * as readline from 'readline';
 
 import { deepResearch, writeFinalReport } from './deep-research';
@@ -24,6 +25,25 @@ function askQuestion(query: string): Promise<string> {
       resolve(answer);
     });
   });
+}
+
+// Helper function to generate a filename from the query
+function generateFilename(query: string): string {
+  // Get current date in YYYY-MM-DD-HH-mm format
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/T/, '-')
+    .replace(/\..+/, '')
+    .replace(/:/g, '-');
+
+  // Create a short title from the query (first 50 chars, remove special chars)
+  const title = (query.split('\n')[0] || query) // Take first line or full query if no newlines
+    .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special characters
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .slice(0, 50); // Limit length
+
+  return `${timestamp}-${title}.md`;
 }
 
 // run the agent
@@ -73,20 +93,18 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
   log('\nResearching your topic...');
 
   log('\nStarting research with progress tracking...\n');
-  
+
   const { learnings, visitedUrls } = await deepResearch({
     query: combinedQuery,
     breadth,
     depth,
-    onProgress: (progress) => {
+    onProgress: progress => {
       output.updateProgress(progress);
     },
   });
 
   log(`\n\nLearnings:\n\n${learnings.join('\n')}`);
-  log(
-    `\n\nVisited URLs (${visitedUrls.length}):\n\n${visitedUrls.join('\n')}`,
-  );
+  log(`\n\nVisited URLs (${visitedUrls.length}):\n\n${visitedUrls.join('\n')}`);
   log('Writing final report...');
 
   const report = await writeFinalReport({
@@ -96,10 +114,12 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
   });
 
   // Save report to file
-  await fs.writeFile('output.md', report, 'utf-8');
+  const filename = generateFilename(initialQuery);
+  const reportPath = path.join('reports', filename);
+  await fs.writeFile(reportPath, report, 'utf-8');
 
   console.log(`\n\nFinal Report:\n\n${report}`);
-  console.log('\nReport has been saved to output.md');
+  console.log(`\nReport has been saved to ${reportPath}`);
   rl.close();
 }
 
