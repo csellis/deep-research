@@ -1,22 +1,24 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
+import { webcrypto } from 'node:crypto';
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 export const sessionCookieName = 'auth-session';
 
 export function generateSessionToken() {
-	const bytes = crypto.getRandomValues(new Uint8Array(18));
-	const token = encodeBase64url(bytes);
-	return token;
+	const bytes = webcrypto.getRandomValues(new Uint8Array(18));
+	return Buffer.from(bytes).toString('base64url');
 }
 
 export async function createSession(token: string, userId: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
+	const encoder = new TextEncoder();
+	const data = encoder.encode(token);
+	const hashBuffer = await webcrypto.subtle.digest('SHA-256', data);
+	const sessionId = Buffer.from(hashBuffer).toString('hex');
+
 	const session: table.Session = {
 		id: sessionId,
 		userId,
@@ -27,7 +29,11 @@ export async function createSession(token: string, userId: string) {
 }
 
 export async function validateSessionToken(token: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
+	const encoder = new TextEncoder();
+	const data = encoder.encode(token);
+	const hashBuffer = await webcrypto.subtle.digest('SHA-256', data);
+	const sessionId = Buffer.from(hashBuffer).toString('hex');
+
 	const [result] = await db
 		.select({
 			// Adjust user table here to tweak returned data
