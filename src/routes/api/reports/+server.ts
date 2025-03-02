@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { reports } from '$lib/server/schema';
+import { reports } from '$lib/server/db/schema';
 
 export async function POST({ request }) {
   const { topic, description, breadth, depth } = await request.json();

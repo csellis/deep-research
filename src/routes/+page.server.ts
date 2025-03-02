@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { reports } from '$lib/server/schema';
+import { reports } from '$lib/server/db/schema';
 import { desc } from 'drizzle-orm';
 import { startResearchJob } from '$lib/server/jobs';
 
@@ -53,7 +53,7 @@ export const actions: Actions = {
 
       // Start the research job in the background with the specified parameters
       setTimeout(() => {
-        startResearchJob(report.id, { breadth, depth });
+        startResearchJob(report.id.toString(), { breadth, depth });
       }, 100);
 
       return { success: true, report };

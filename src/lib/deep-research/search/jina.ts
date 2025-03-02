@@ -17,26 +17,45 @@ export class JinaProvider implements SearchProvider {
       headers['X-API-Key'] = this.apiKey;
     }
 
-    const response = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-      method: 'GET',
-      headers,
-      signal: options?.timeout ? AbortSignal.timeout(options.timeout) : undefined
-    });
+    try {
+      console.log('Searching Jina with query:', query);
 
-    if (!response.ok) {
-      throw new Error(`Jina search failed: ${response.statusText}`);
+      const response = await fetch(`https://api.jina.ai/v1/search`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          query,
+          top_k: options?.limit || 10
+        }),
+        signal: options?.timeout ? AbortSignal.timeout(options.timeout) : undefined
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Jina API error:', errorText);
+        throw new Error(`Jina search failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Jina response:', JSON.stringify(data, null, 2));
+
+      if (!data.results || !Array.isArray(data.results)) {
+        console.error('Unexpected Jina response format:', data);
+        throw new Error('Invalid response format from Jina API');
+      }
+
+      // Transform Jina response to our SearchResponse format
+      return {
+        data: data.results.map((result: any) => ({
+          url: result.url || 'No URL provided',
+          title: result.title || 'No title available',
+          snippet: result.snippet || result.text || 'No snippet available',
+          markdown: result.content || result.text || result.snippet || 'No content available'
+        }))
+      };
+    } catch (error) {
+      console.error('Error in Jina search:', error);
+      throw error;
     }
-
-    const data = await response.json();
-
-    // Transform Jina response to our SearchResponse format
-    return {
-      data: data.results.map((result: any) => ({
-        url: result.url,
-        title: result.title,
-        snippet: result.snippet,
-        markdown: result.content // Jina returns clean, LLM-friendly content
-      }))
-    };
   }
 } 

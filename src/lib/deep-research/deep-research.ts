@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { o3MiniModel, trimPrompt } from './ai/providers';
 import { OutputManager } from './output-manager';
 import { systemPrompt } from './prompt';
-import { createSearchProvider, type SearchProviderConfig } from './search';
+import { createSearchProvider, type SearchProviderConfig, type SearchResponse } from './search';
 
 // Initialize output manager for coordinated console/progress output
 const output = new OutputManager();
@@ -195,7 +195,8 @@ export async function deepResearch({
 	searchProvider = { provider: 'jina' as const },
 	learnings = [],
 	visitedUrls = [],
-	onProgress
+	onProgress,
+	onSearchResults
 }: {
 	query: string;
 	breadth: number;
@@ -204,6 +205,7 @@ export async function deepResearch({
 	learnings?: string[];
 	visitedUrls?: string[];
 	onProgress?: (progress: ResearchProgress) => void;
+	onSearchResults?: (results: SearchResponse) => Promise<void>;
 }): Promise<ResearchResult> {
 	log(`Starting deep research with query: "${query}"`);
 	log(`Parameters: breadth=${breadth}, depth=${depth}, existing learnings=${learnings.length}`);
@@ -262,6 +264,11 @@ export async function deepResearch({
 						scrapeOptions: { formats: ['markdown'] }
 					});
 
+					// Call onSearchResults callback if provided
+					if (onSearchResults) {
+						await onSearchResults(result);
+					}
+
 					// Collect URLs from this search
 					const newUrls = compact(result.data.map((item) => item.url));
 					log(`Found ${result.data.length} results, ${newUrls.length} unique URLs`);
@@ -304,7 +311,8 @@ export async function deepResearch({
 							searchProvider,
 							learnings: allLearnings,
 							visitedUrls: allUrls,
-							onProgress
+							onProgress,
+							onSearchResults
 						});
 					} else {
 						log(`Reached maximum depth, completing research branch for query: "${serpQuery.query}"`);

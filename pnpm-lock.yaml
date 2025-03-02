@@ -18,7 +18,7 @@ importers:
         specifier: ^4.1.17
         version: 4.1.46(react@19.0.0)(zod@3.24.2)
       drizzle-orm:
-        specifier: ^0.29.3
+        specifier: ^0.29.5
         version: 0.29.5(@opentelemetry/api@1.9.0)(postgres@3.4.5)(react@19.0.0)
       js-tiktoken:
         specifier: ^1.0.17
@@ -82,7 +82,7 @@ importers:
         specifier: ^16.4.7
         version: 16.4.7
       drizzle-kit:
-        specifier: ^0.20.14
+        specifier: ^0.20.18
         version: 0.20.18
       eslint:
         specifier: ^8.56.0
@@ -2982,11 +2982,11 @@ packages:
     resolution: {integrity: sha512-KYad6Vy5VDWV4GH3fjpseMQ/XU2BhIYP7Vzd0LG44qRWm/Yt2WCOTicFdvmgo6gWaqooMQCawTtILVQJupKu7A==}
     engines: {node: '>=14.0.0'}
 
-  tldts-core@6.1.79:
-    resolution: {integrity: sha512-HM+Ud/2oQuHt4I43Nvjc213Zji/z25NSH5OkJskJwHXNtYh9DTRlHMDFhms9dFMP7qyve/yVaXFIxmcJ7TdOjw==}
+  tldts-core@6.1.82:
+    resolution: {integrity: sha512-Jabl32m21tt/d/PbDO88R43F8aY98Piiz6BVH9ShUlOAiiAELhEqwrAmBocjAqnCfoUeIsRU+h3IEzZd318F3w==}
 
-  tldts@6.1.79:
-    resolution: {integrity: sha512-wjlYwK8lC/WcywLWf3A7qbK07SexezXjTRVwuPWXHvcjD7MnpPS2RXY5rLO3g12a8CNc7Y7jQRQsV7XyuBZjig==}
+  tldts@6.1.82:
+    resolution: {integrity: sha512-KCTjNL9F7j8MzxgfTgjT+v21oYH38OidFty7dH00maWANAI2IsLw2AnThtTJi9HKALHZKQQWnNebYheadacD+g==}
     hasBin: true
 
   to-regex-range@5.0.1:
@@ -5835,12 +5835,12 @@ snapshots:
 
   tinyspy@2.2.1: {}
 
-  tldts-core@6.1.79:
+  tldts-core@6.1.82:
     optional: true
 
-  tldts@6.1.79:
+  tldts@6.1.82:
     dependencies:
-      tldts-core: 6.1.79
+      tldts-core: 6.1.82
     optional: true
 
   to-regex-range@5.0.1:
@@ -5851,7 +5851,7 @@ snapshots:
 
   tough-cookie@5.1.2:
     dependencies:
-      tldts: 6.1.79
+      tldts: 6.1.82
     optional: true
 
   tr46@0.0.3: {}

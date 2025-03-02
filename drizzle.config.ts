@@ -7,7 +7,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-	schema: './src/lib/server/schema.ts',
+	schema: './src/lib/server/db/schema.ts',
 	out: './drizzle',
 	driver: 'pg',
 	dbCredentials: {

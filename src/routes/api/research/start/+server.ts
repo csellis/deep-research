@@ -1,28 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { reports } from '$lib/server/schema';
-import { startResearchWithAnswers } from '$lib/server/jobs';
+import { reports } from '$lib/server/db/schema';
+import { startResearchJob } from '$lib/server/jobs';
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
-    const {
-      topic,
-      description,
-      breadth,
-      depth,
-      followUpQuestions,
-      answers
-    } = body;
+    const { topic, description, breadth = 4, depth = 2 } = body;
 
     // Validate required fields
     if (!topic || !description) {
       return json({ error: 'Topic and description are required' }, { status: 400 });
-    }
-
-    if (!followUpQuestions || !answers || followUpQuestions.length !== answers.length) {
-      return json({ error: 'Invalid questions or answers' }, { status: 400 });
     }
 
     // Create the report
@@ -30,26 +19,16 @@ export const POST: RequestHandler = async ({ request }) => {
       topic,
       description,
       status: 'pending',
-      metadata: JSON.stringify({
-        breadth,
-        depth,
-        followUpQuestions,
-        answers
-      }),
+      metadata: JSON.stringify({ breadth, depth }),
       created_at: new Date(),
       updated_at: new Date()
     }).returning();
 
     const report = result[0];
 
-    // Start the research job with the answers
+    // Start the research job
     setTimeout(() => {
-      startResearchWithAnswers(report.id, {
-        breadth,
-        depth,
-        followUpQuestions,
-        answers
-      });
+      startResearchJob(report.id.toString(), { breadth, depth });
     }, 100);
 
     return json({ success: true, report });

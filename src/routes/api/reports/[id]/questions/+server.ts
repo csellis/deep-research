@@ -1,54 +1,43 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
+import { reports } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { reports } from '$lib/server/schema';
 import { generateFeedback } from '$lib/deep-research/feedback';
 
-export const POST: RequestHandler = async ({ params, request, url }) => {
+export const GET: RequestHandler = async ({ params }) => {
   try {
+    // Get the report
     const reportId = params.id;
+    if (!reportId || !isValidUUID(reportId)) {
+      return json({ error: 'Invalid report ID' }, { status: 400 });
+    }
 
-    // Get breadth and depth from query parameters
-    const breadth = parseInt(url.searchParams.get('breadth') || '4');
-    const depth = parseInt(url.searchParams.get('depth') || '2');
-
-    // Verify the report exists
-    const [report] = await db
-      .select()
-      .from(reports)
-      .where(eq(reports.id, reportId))
-      .limit(1);
+    const report = await db.query.reports.findFirst({
+      where: eq(reports.id, reportId)
+    });
 
     if (!report) {
       return json({ error: 'Report not found' }, { status: 404 });
     }
 
-    // Get request body
-    const body = await request.json();
-    const { topic, description } = body;
-
     // Generate follow-up questions
-    const followUpQuestions = await generateFeedback({
-      query: topic || report.topic
+    const questions = await generateFeedback({
+      query: report.topic
     });
 
-    // Update the report with the research parameters
-    await db
-      .update(reports)
-      .set({
-        metadata: JSON.stringify({ breadth, depth }),
-        updated_at: new Date()
-      })
-      .where(eq(reports.id, reportId));
-
-    return json({
-      questions: followUpQuestions,
-      breadth,
-      depth
-    });
+    return json({ questions });
   } catch (error) {
     console.error('Error generating questions:', error);
-    return json({ error: 'Failed to generate questions' }, { status: 500 });
+    return json(
+      { error: error instanceof Error ? error.message : 'Failed to generate questions' },
+      { status: 500 }
+    );
   }
-}; 
+};
+
+// UUID validation helper
+function isValidUUID(uuid: string) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+} 

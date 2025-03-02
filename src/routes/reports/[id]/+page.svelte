@@ -9,6 +9,43 @@
 	function renderMarkdown(content: string) {
 		return marked.parse(content);
 	}
+
+	// Function to format date
+	function formatDate(date: string | Date) {
+		if (date instanceof Date) {
+			return date.toLocaleString();
+		}
+		return new Date(date).toLocaleString();
+	}
+
+	// Group sources by domain
+	function groupSourcesByDomain(sources: any[]) {
+		const groups = new Map();
+
+		for (const source of sources) {
+			try {
+				const url = new URL(source.url);
+				const domain = url.hostname;
+
+				if (!groups.has(domain)) {
+					groups.set(domain, []);
+				}
+
+				groups.get(domain).push(source);
+			} catch (e) {
+				// If URL parsing fails, group under "Other"
+				const domain = 'Other';
+				if (!groups.has(domain)) {
+					groups.set(domain, []);
+				}
+				groups.get(domain).push(source);
+			}
+		}
+
+		return groups;
+	}
+
+	$: sourceGroups = data.sources ? groupSourcesByDomain(data.sources) : new Map();
 </script>
 
 <div class="container mx-auto max-w-screen-lg px-4 py-8">
@@ -22,9 +59,9 @@
 				{data.report.topic}
 			</h1>
 			<p class="mb-6 text-gray-600">
-				Generated: {new Date(data.report.created_at).toLocaleString()}
+				Generated: {formatDate(data.report.created_at)}
 				<br />
-				Updated: {new Date(data.report.updated_at).toLocaleString()}
+				Updated: {formatDate(data.report.updated_at)}
 				<br />
 				{data.report.description}
 			</p>
@@ -57,13 +94,48 @@
 					-->
 					{@html renderMarkdown(data.report.content)}
 				</div>
-			{:else if data.report.status === 'pending' && data.isProcessing}
-				<div class="py-8 text-center">
-					<div
-						class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"
-					></div>
-					<p class="text-gray-600">Research in progress...</p>
-				</div>
+
+				<!-- Sources Section -->
+				{#if data.sources && data.sources.length > 0}
+					<div class="mt-8 border-t pt-8">
+						<h2 class="mb-6 text-2xl font-bold">Research Sources</h2>
+
+						{#each [...sourceGroups.entries()] as [domain, sources]}
+							<div class="mb-6">
+								<h3 class="mb-3 text-lg font-semibold text-gray-700">{domain}</h3>
+								<div class="space-y-4">
+									{#each sources as source}
+										<div class="rounded-lg border border-gray-200 p-4">
+											<h4 class="mb-2 font-medium">
+												<a
+													href={source.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="text-blue-600 hover:text-blue-800"
+												>
+													{source.title || 'Untitled'}
+												</a>
+											</h4>
+											<p class="text-gray-600">{source.snippet}</p>
+											<div class="mt-2 text-sm text-gray-500">
+												Added: {formatDate(source.created_at)}
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				{#if data.isProcessing}
+					<div class="py-8 text-center">
+						<div
+							class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"
+						></div>
+						<p class="text-gray-600">Research in progress...</p>
+					</div>
+				{/if}
 			{:else if data.report.status === 'pending'}
 				<div class="py-8 text-center">
 					<p class="text-gray-600">Research will begin shortly...</p>
@@ -73,9 +145,9 @@
 			{/if}
 
 			<div class="mt-6 text-sm text-gray-500">
-				Created: {new Date(data.report.created_at).toLocaleString()}
+				Created: {formatDate(data.report.created_at)}
 				<br />
-				Last updated: {new Date(data.report.updated_at).toLocaleString()}
+				Last updated: {formatDate(data.report.updated_at)}
 			</div>
 		</div>
 	{:else}
