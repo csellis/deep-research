@@ -1,4 +1,4 @@
-import { ResearchProgress } from './deep-research';
+import type { ResearchProgress } from './deep-research';
 
 export class OutputManager {
 	private progressLines: number = 4;

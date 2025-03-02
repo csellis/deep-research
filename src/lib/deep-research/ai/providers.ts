@@ -22,6 +22,8 @@ export const o3MiniModel = openai(customModel, {
 	structuredOutputs: true
 });
 
+export const gpt4oMini = openai('gpt-4o-mini');
+
 const MinChunkSize = 140;
 const encoder = getEncoding('o200k_base');
 
