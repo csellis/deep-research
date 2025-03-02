@@ -1,13 +1,17 @@
 <!-- Main landing page -->
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
+	import ResearchForm from '$lib/components/ResearchForm.svelte';
+	import { goto } from '$app/navigation';
 
 	export let data: PageData;
 
-	// Default values for research parameters
-	let breadth = 4;
-	let depth = 2;
+	async function handleResearchComplete(event: CustomEvent) {
+		const { report } = event.detail;
+		if (report?.id) {
+			await goto(`/reports/${report.id}`);
+		}
+	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -17,79 +21,7 @@
 		<!-- Create new report form -->
 		<div class="rounded-lg bg-white p-6 shadow-lg">
 			<h2 class="mb-4 text-2xl font-semibold">Create New Report</h2>
-			<form method="POST" use:enhance>
-				<div class="mb-4">
-					<label for="topic" class="mb-2 block text-sm font-medium text-gray-700"
-						>Research Topic</label
-					>
-					<input
-						type="text"
-						id="topic"
-						name="topic"
-						class="w-full rounded-md border border-gray-300 px-3 py-2"
-						required
-					/>
-				</div>
-				<div class="mb-4">
-					<label for="description" class="mb-2 block text-sm font-medium text-gray-700"
-						>Description</label
-					>
-					<textarea
-						id="description"
-						name="description"
-						rows="3"
-						class="w-full rounded-md border border-gray-300 px-3 py-2"
-						required
-					></textarea>
-				</div>
-
-				<div class="mb-6 rounded-lg bg-blue-50 p-4">
-					<h3 class="mb-2 text-lg font-semibold">Research Parameters</h3>
-					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<div>
-							<label for="breadth" class="mb-1 block text-sm font-medium text-gray-700">
-								Breadth (1-5): {breadth}
-							</label>
-							<input
-								id="breadth"
-								name="breadth"
-								type="range"
-								min="1"
-								max="5"
-								bind:value={breadth}
-								class="w-full"
-							/>
-							<p class="mt-1 text-xs text-gray-500">
-								Higher breadth means more diverse research queries (more comprehensive but slower)
-							</p>
-						</div>
-						<div>
-							<label for="depth" class="mb-1 block text-sm font-medium text-gray-700">
-								Depth (1-3): {depth}
-							</label>
-							<input
-								id="depth"
-								name="depth"
-								type="range"
-								min="1"
-								max="3"
-								bind:value={depth}
-								class="w-full"
-							/>
-							<p class="mt-1 text-xs text-gray-500">
-								Higher depth means more follow-up research (more thorough but slower)
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<button
-					type="submit"
-					class="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-				>
-					Start Research
-				</button>
-			</form>
+			<ResearchForm on:complete={handleResearchComplete} />
 		</div>
 
 		<!-- Reports list -->

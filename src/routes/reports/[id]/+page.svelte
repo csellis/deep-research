@@ -1,9 +1,7 @@
 <!-- Report detail page -->
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { marked } from 'marked';
 	import type { PageData } from './$types';
-	import InteractiveResearch from '$lib/components/InteractiveResearch.svelte';
 
 	export let data: PageData;
 
@@ -11,9 +9,6 @@
 	function renderMarkdown(content: string) {
 		return marked.parse(content);
 	}
-
-	// Interactive research state
-	let showInteractiveResearch = false;
 </script>
 
 <div class="container mx-auto max-w-screen-lg px-4 py-8">
@@ -40,35 +35,10 @@
 					{data.report.status}
 				</span>
 
-				{#if data.report.status === 'pending' && !data.isProcessing && !showInteractiveResearch}
-					<div class="flex items-center space-x-4">
-						<button
-							on:click={() => (showInteractiveResearch = true)}
-							class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-						>
-							Start Interactive Research
-						</button>
-						<form method="POST" action="?/startResearch" use:enhance>
-							<button
-								type="submit"
-								class="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-							>
-								Quick Start Research
-							</button>
-						</form>
-					</div>
-				{:else if data.isProcessing}
+				{#if data.isProcessing}
 					<span class="text-blue-600">Research in progress...</span>
 				{/if}
 			</div>
-
-			{#if showInteractiveResearch && data.report.status === 'pending' && !data.isProcessing}
-				<InteractiveResearch
-					reportId={data.report.id}
-					topic={data.report.topic}
-					description={data.report.description}
-				/>
-			{/if}
 
 			{#if data.report.content}
 				<div class="prose prose-lg max-w-screen-lg mx-auto">
@@ -86,11 +56,9 @@
 					></div>
 					<p class="text-gray-600">Research in progress...</p>
 				</div>
-			{:else if data.report.status === 'pending' && !showInteractiveResearch}
+			{:else if data.report.status === 'pending'}
 				<div class="py-8 text-center">
-					<p class="text-gray-600">
-						Click "Start Interactive Research" to begin the research process.
-					</p>
+					<p class="text-gray-600">Research will begin shortly...</p>
 				</div>
 			{:else}
 				<p class="text-gray-600">No content available.</p>
