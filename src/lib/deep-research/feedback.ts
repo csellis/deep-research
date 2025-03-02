@@ -34,7 +34,11 @@ Research Topic: ${query}
 
 The questions should be clear, specific, and designed to elicit informative responses that will guide the research process. Avoid yes/no questions and instead ask open-ended questions that encourage detailed answers.`,
 			schema: z.object({
-				questions: z.array(z.string()).describe(`List of ${numQuestions} follow-up questions to better understand the research needs`)
+				questions: z
+					.array(z.string())
+					.describe(
+						`List of ${numQuestions} follow-up questions to better understand the research needs`
+					)
 			})
 		});
 
@@ -49,7 +53,7 @@ The questions should be clear, specific, and designed to elicit informative resp
 		// Return some default questions if there's an error
 		return [
 			"Could you provide more specific details about what aspects of this topic you're most interested in?",
-			"Are there any particular use cases or scenarios you want the research to focus on?",
+			'Are there any particular use cases or scenarios you want the research to focus on?',
 			"What's your current level of knowledge on this topic, and what gaps are you trying to fill?"
 		];
 	}

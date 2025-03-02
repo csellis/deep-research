@@ -9,7 +9,7 @@ dotenv.config({ path: '.env.local' });
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
+	throw new Error('DATABASE_URL environment variable is not set');
 }
 
 // For migrations
@@ -19,4 +19,4 @@ export const migrationClient = postgres(connectionString, { max: 1 });
 const queryClient = postgres(connectionString);
 
 // Create the database instance
-export const db = drizzle(queryClient, { schema }); 
+export const db = drizzle(queryClient, { schema });

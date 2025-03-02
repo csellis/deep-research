@@ -1,27 +1,27 @@
 {
-  "version": "5",
-  "dialect": "pg",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1740819465212,
-      "tag": "0000_woozy_karma",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1740899858385,
-      "tag": "0001_wealthy_captain_america",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1740901312545,
-      "tag": "0002_tranquil_firelord",
-      "breakpoints": true
-    }
-  ]
+	"version": "5",
+	"dialect": "pg",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "5",
+			"when": 1740819465212,
+			"tag": "0000_woozy_karma",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "5",
+			"when": 1740899858385,
+			"tag": "0001_wealthy_captain_america",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "5",
+			"when": 1740901312545,
+			"tag": "0002_tranquil_firelord",
+			"breakpoints": true
+		}
+	]
 }

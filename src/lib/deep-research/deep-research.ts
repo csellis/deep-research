@@ -58,12 +58,13 @@ async function generateSerpQueries({
 			// model: o3MiniModel,
 			model: gpt4oMini,
 			system: systemPrompt(),
-			prompt: `Given the following prompt from the user, generate a list of SERP queries to research the topic. Return a maximum of ${numQueries} queries, but feel free to return less if the original prompt is clear. Make sure each query is unique and not similar to each other: <prompt>${query}</prompt>\n\n${learnings
-				? `Here are some learnings from previous research, use them to generate more specific queries: ${learnings.join(
-					'\n'
-				)}`
-				: ''
-				}`,
+			prompt: `Given the following prompt from the user, generate a list of SERP queries to research the topic. Return a maximum of ${numQueries} queries, but feel free to return less if the original prompt is clear. Make sure each query is unique and not similar to each other: <prompt>${query}</prompt>\n\n${
+				learnings
+					? `Here are some learnings from previous research, use them to generate more specific queries: ${learnings.join(
+							'\n'
+						)}`
+					: ''
+			}`,
 			schema: z.object({
 				queries: z
 					.array(
@@ -140,7 +141,9 @@ async function processSerpResult({
 			})
 		});
 
-		log(`Successfully generated ${res.object.learnings.length} learnings and ${res.object.followUpQuestions.length} follow-up questions`);
+		log(
+			`Successfully generated ${res.object.learnings.length} learnings and ${res.object.followUpQuestions.length} follow-up questions`
+		);
 		res.object.learnings.forEach((l, i) => log(`  Learning ${i + 1}: ${l.substring(0, 100)}...`));
 		res.object.followUpQuestions.forEach((q, i) => log(`  Follow-up ${i + 1}: ${q}`));
 
@@ -247,7 +250,9 @@ export async function deepResearch({
 	});
 
 	log(`Generated ${serpQueries.length} SERP queries for research`);
-	serpQueries.forEach((q, i) => log(`  Query ${i + 1}: "${q.query}" - Goal: ${q.researchGoal.substring(0, 100)}...`));
+	serpQueries.forEach((q, i) =>
+		log(`  Query ${i + 1}: "${q.query}" - Goal: ${q.researchGoal.substring(0, 100)}...`)
+	);
 
 	reportProgress({
 		totalQueries: serpQueries.length,
@@ -287,7 +292,9 @@ export async function deepResearch({
 						numFollowUpQuestions: newBreadth
 					});
 
-					log(`Extracted ${newLearnings.learnings.length} learnings and ${newLearnings.followUpQuestions.length} follow-up questions`);
+					log(
+						`Extracted ${newLearnings.learnings.length} learnings and ${newLearnings.followUpQuestions.length} follow-up questions`
+					);
 
 					const allLearnings = [...learnings, ...newLearnings.learnings];
 					const allUrls = [...visitedUrls, ...newUrls];
@@ -319,7 +326,9 @@ export async function deepResearch({
 							onSearchResults
 						});
 					} else {
-						log(`Reached maximum depth, completing research branch for query: "${serpQuery.query}"`);
+						log(
+							`Reached maximum depth, completing research branch for query: "${serpQuery.query}"`
+						);
 						reportProgress({
 							currentDepth: 0,
 							completedQueries: progress.completedQueries + 1,
@@ -352,7 +361,9 @@ export async function deepResearch({
 	const finalLearnings = [...new Set(results.flatMap((r) => r.learnings))];
 	const finalUrls = [...new Set(results.flatMap((r) => r.visitedUrls))];
 
-	log(`Research complete. Collected ${finalLearnings.length} unique learnings and ${finalUrls.length} unique URLs`);
+	log(
+		`Research complete. Collected ${finalLearnings.length} unique learnings and ${finalUrls.length} unique URLs`
+	);
 
 	return {
 		learnings: finalLearnings,

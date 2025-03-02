@@ -43,11 +43,14 @@ export const actions: Actions = {
 
 		if (!existingUser) {
 			// Create new user
-			const [newUser] = await db.insert(user).values({
-				id: generateUserId(),
-				username,
-				passwordHash: '' // We're not using passwords in this simplified version
-			}).returning();
+			const [newUser] = await db
+				.insert(user)
+				.values({
+					id: generateUserId(),
+					username,
+					passwordHash: '' // We're not using passwords in this simplified version
+				})
+				.returning();
 
 			// Create session
 			const session = await createSession(newUser.id);

@@ -28,7 +28,9 @@ export const reports = pgTable('reports', {
 
 export const sources = pgTable('sources', {
 	id: uuid('id').defaultRandom().primaryKey(),
-	reportId: uuid('report_id').notNull().references(() => reports.id, { onDelete: 'cascade' }),
+	reportId: uuid('report_id')
+		.notNull()
+		.references(() => reports.id, { onDelete: 'cascade' }),
 	url: text('url').notNull(),
 	title: text('title').notNull(),
 	snippet: text('snippet').notNull(),

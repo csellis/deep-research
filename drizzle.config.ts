@@ -11,6 +11,6 @@ export default defineConfig({
 	out: './drizzle',
 	driver: 'pg',
 	dbCredentials: {
-		connectionString: process.env.DATABASE_URL,
-	},
+		connectionString: process.env.DATABASE_URL
+	}
 });

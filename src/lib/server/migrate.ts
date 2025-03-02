@@ -5,17 +5,17 @@ import { migrationClient } from './db';
 const db = drizzle(migrationClient);
 
 async function main() {
-  console.log('Running migrations...');
+	console.log('Running migrations...');
 
-  await migrate(db, {
-    migrationsFolder: 'drizzle'
-  });
+	await migrate(db, {
+		migrationsFolder: 'drizzle'
+	});
 
-  console.log('Migrations complete!');
-  process.exit(0);
+	console.log('Migrations complete!');
+	process.exit(0);
 }
 
 main().catch((err) => {
-  console.error('Migration failed!', err);
-  process.exit(1);
-}); 
+	console.error('Migration failed!', err);
+	process.exit(1);
+});
