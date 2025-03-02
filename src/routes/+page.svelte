@@ -4,6 +4,10 @@
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+
+	// Default values for research parameters
+	let breadth = 4;
+	let depth = 2;
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -38,6 +42,47 @@
 						required
 					></textarea>
 				</div>
+
+				<div class="mb-6 rounded-lg bg-blue-50 p-4">
+					<h3 class="mb-2 text-lg font-semibold">Research Parameters</h3>
+					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<div>
+							<label for="breadth" class="mb-1 block text-sm font-medium text-gray-700">
+								Breadth (1-5): {breadth}
+							</label>
+							<input
+								id="breadth"
+								name="breadth"
+								type="range"
+								min="1"
+								max="5"
+								bind:value={breadth}
+								class="w-full"
+							/>
+							<p class="mt-1 text-xs text-gray-500">
+								Higher breadth means more diverse research queries (more comprehensive but slower)
+							</p>
+						</div>
+						<div>
+							<label for="depth" class="mb-1 block text-sm font-medium text-gray-700">
+								Depth (1-3): {depth}
+							</label>
+							<input
+								id="depth"
+								name="depth"
+								type="range"
+								min="1"
+								max="3"
+								bind:value={depth}
+								class="w-full"
+							/>
+							<p class="mt-1 text-xs text-gray-500">
+								Higher depth means more follow-up research (more thorough but slower)
+							</p>
+						</div>
+					</div>
+				</div>
+
 				<button
 					type="submit"
 					class="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"

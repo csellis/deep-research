@@ -27,6 +27,14 @@ export const actions: Actions = {
     const topic = data.get('topic')?.toString();
     const description = data.get('description')?.toString();
 
+    // Get breadth and depth parameters
+    const breadthStr = data.get('breadth')?.toString();
+    const depthStr = data.get('depth')?.toString();
+
+    // Parse breadth and depth with defaults
+    const breadth = breadthStr ? parseInt(breadthStr, 10) : 4;
+    const depth = depthStr ? parseInt(depthStr, 10) : 2;
+
     if (!topic || !description) {
       throw error(400, 'Topic and description are required');
     }
@@ -36,15 +44,16 @@ export const actions: Actions = {
         topic,
         description,
         status: 'pending',
+        metadata: JSON.stringify({ breadth, depth }),
         created_at: new Date(),
         updated_at: new Date()
       }).returning();
 
       const report = result[0];
 
-      // Start the research job in the background
+      // Start the research job in the background with the specified parameters
       setTimeout(() => {
-        startResearchJob(report.id);
+        startResearchJob(report.id, { breadth, depth });
       }, 100);
 
       return { success: true, report };

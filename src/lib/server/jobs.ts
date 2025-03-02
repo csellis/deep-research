@@ -8,7 +8,13 @@ import { OutputManager } from '$lib/deep-research/output-manager';
 // Map to store active research jobs
 const activeJobs = new Map<string, { cancel: () => void }>();
 
-export async function startResearchJob(reportId: string) {
+export async function startResearchJob(
+  reportId: string,
+  options?: {
+    breadth?: number;
+    depth?: number;
+  }
+) {
   // Check if job is already running
   if (activeJobs.has(reportId)) {
     console.log(`Research job for report ${reportId} is already running`);
@@ -16,6 +22,9 @@ export async function startResearchJob(reportId: string) {
   }
 
   console.log(`Starting research job for report ${reportId}`);
+  if (options) {
+    console.log(`Parameters: breadth=${options.breadth}, depth=${options.depth}`);
+  }
 
   // Create a cancellation token
   let isCancelled = false;
@@ -61,11 +70,24 @@ Follow-up Questions and Answers:
 ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).join('\n')}
 `;
 
-    // Default research parameters
-    // const breadth = 4;
-    // const depth = 2;
-    const breadth = 1;
-    const depth = 1;
+    // Get research parameters from options or metadata or use defaults
+    let breadth = 4;
+    let depth = 2;
+
+    if (options && options.breadth !== undefined && options.depth !== undefined) {
+      breadth = options.breadth;
+      depth = options.depth;
+    } else if (report.metadata) {
+      try {
+        const metadata = JSON.parse(report.metadata);
+        if (metadata.breadth) breadth = metadata.breadth;
+        if (metadata.depth) depth = metadata.depth;
+      } catch (e) {
+        console.error(`Error parsing metadata for report ${reportId}:`, e);
+      }
+    }
+
+    console.log(`Using research parameters: breadth=${breadth}, depth=${depth}`);
 
     // Start the research process
     const { learnings, visitedUrls } = await deepResearch({
