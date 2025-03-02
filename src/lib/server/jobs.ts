@@ -4,6 +4,7 @@ import { reports } from '$lib/server/db/schema';
 import { deepResearch, writeFinalReport } from '$lib/deep-research/deep-research';
 import { generateFeedback } from '$lib/deep-research/feedback';
 import { OutputManager } from '$lib/deep-research/output-manager';
+import { JINA_API_KEY } from '$env/static/private';
 
 // Map to store active research jobs
 const activeJobs = new Map<string, { cancel: () => void }>();
@@ -99,6 +100,10 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
       query: combinedQuery,
       breadth: options.breadth,
       depth: options.depth,
+      searchProvider: {
+        provider: 'jina',
+        apiKey: JINA_API_KEY || ''
+      },
       onProgress: async (progress) => {
         if (isCancelled) return;
 

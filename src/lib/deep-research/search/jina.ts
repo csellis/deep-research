@@ -4,29 +4,28 @@ export class JinaProvider implements SearchProvider {
   private apiKey?: string;
   name = 'jina';
 
+  // Get your Jina AI API key for free: https://jina.ai/?sui=apikey
   constructor(config?: { apiKey?: string }) {
     this.apiKey = config?.apiKey ?? process.env.JINA_API_KEY;
   }
 
   async search(query: string, options?: SearchOptions): Promise<SearchResponse> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     };
 
     if (this.apiKey) {
-      headers['X-API-Key'] = this.apiKey;
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
 
     try {
       console.log('Searching Jina with query:', query);
 
-      const response = await fetch(`https://api.jina.ai/v1/search`, {
+      const response = await fetch(`https://s.jina.ai/`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          query,
-          top_k: options?.limit || 10
-        }),
+        body: JSON.stringify({ q: query }),
         signal: options?.timeout ? AbortSignal.timeout(options.timeout) : undefined
       });
 
@@ -39,18 +38,18 @@ export class JinaProvider implements SearchProvider {
       const data = await response.json();
       console.log('Jina response:', JSON.stringify(data, null, 2));
 
-      if (!data.results || !Array.isArray(data.results)) {
+      if (!data.data || !Array.isArray(data.data)) {
         console.error('Unexpected Jina response format:', data);
         throw new Error('Invalid response format from Jina API');
       }
 
       // Transform Jina response to our SearchResponse format
       return {
-        data: data.results.map((result: any) => ({
+        data: data.data.map((result: any) => ({
           url: result.url || 'No URL provided',
           title: result.title || 'No title available',
-          snippet: result.snippet || result.text || 'No snippet available',
-          markdown: result.content || result.text || result.snippet || 'No content available'
+          snippet: result.content || 'No snippet available',
+          markdown: result.content || 'No content available'
         }))
       };
     } catch (error) {
