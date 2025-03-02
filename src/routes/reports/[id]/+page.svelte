@@ -18,8 +18,16 @@
 
 	{#if data.report}
 		<div class="rounded-lg bg-white p-6 shadow-lg">
-			<h1 class="mb-4 text-3xl font-bold">{data.report.topic}</h1>
-			<p class="mb-6 text-gray-600">{data.report.description}</p>
+			<h1 class="mb-4 text-3xl font-bold">
+				{data.report.topic}
+			</h1>
+			<p class="mb-6 text-gray-600">
+				Generated: {new Date(data.report.created_at).toLocaleString()}
+				<br />
+				Updated: {new Date(data.report.updated_at).toLocaleString()}
+				<br />
+				{data.report.description}
+			</p>
 
 			<div class="mb-6 flex items-center justify-between">
 				<span

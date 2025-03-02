@@ -2,27 +2,19 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { generateFeedback } from '$lib/deep-research/feedback';
 
-export const POST: RequestHandler = async ({ request }) => {
+export async function POST({ request }) {
+  const { topic } = await request.json();
+
   try {
-    const body = await request.json();
-    const { topic, description, breadth, depth } = body;
-
-    if (!topic) {
-      return json({ error: 'Topic is required' }, { status: 400 });
-    }
-
-    // Generate follow-up questions based on the topic
     const questions = await generateFeedback({
       query: topic
     });
 
-    return json({
-      questions,
-      breadth,
-      depth
-    });
-  } catch (error) {
-    console.error('Error generating questions:', error);
-    return json({ error: 'Failed to generate questions' }, { status: 500 });
+    return json({ questions });
+  } catch (error: any) {
+    return json(
+      { error: error.message || 'Failed to generate questions' },
+      { status: 500 }
+    );
   }
-}; 
+} 

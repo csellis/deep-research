@@ -278,125 +278,169 @@ ${options.followUpQuestions.map((q, i) => `Q: ${q}\nA: ${options.answers[i] || '
 }
 
 // Function to start research with user-provided answers
-export async function startResearchWithAnswers(
-  reportId: string,
-  options: {
-    breadth: number;
-    depth: number;
-    followUpQuestions: string[];
-    answers: string[];
-  }
-) {
-  // Check if job is already running
-  if (activeJobs.has(reportId)) {
-    console.log(`Research job for report ${reportId} is already running`);
-    return;
+export async function startResearchWithAnswers({
+  reportId,
+  answers,
+  breadth = 4,
+  depth = 2
+}: {
+  reportId: string;
+  answers: string[];
+  breadth?: number;
+  depth?: number;
+}) {
+  // Get the report
+  const [report] = await db
+    .select()
+    .from(reports)
+    .where(eq(reports.id, reportId))
+    .limit(1);
+
+  if (!report) {
+    throw new Error('Report not found');
   }
 
-  console.log(`Starting research with answers for report ${reportId}`);
-  console.log(`Parameters: breadth=${options.breadth}, depth=${options.depth}`);
-  console.log(`Follow-up questions: ${options.followUpQuestions.length}`);
+  if (report.status === 'processing') {
+    throw new Error('Research already in progress');
+  }
 
-  // Create a cancellation token
-  let isCancelled = false;
-  const cancel = () => {
-    isCancelled = true;
-    activeJobs.delete(reportId);
+  // Default metadata structure
+  const defaultMetadata = {
+    breadth,
+    depth,
+    answers,
+    currentDepth: 0,
+    totalDepth: depth,
+    currentBreadth: 0,
+    totalBreadth: breadth,
+    currentQuery: '',
+    totalQueries: 0,
+    completedQueries: 0,
+    startedAt: new Date().toISOString()
   };
 
-  // Store the job
-  activeJobs.set(reportId, { cancel });
+  // Log parameters
+  console.log(`Starting research for report ${reportId}`);
+  console.log(`Breadth: ${breadth}, Depth: ${depth}`);
+  console.log(`Answers: ${answers.join(', ')}`);
+
+  // Update report status with defaults for all fields
+  await db
+    .update(reports)
+    .set({
+      status: 'processing',
+      content: '## Research Starting\n\nPreparing to begin research...',
+      metadata: JSON.stringify(defaultMetadata),
+      updated_at: new Date()
+    })
+    .where(eq(reports.id, reportId));
 
   try {
-    // Get the report
-    const [report] = await db
-      .select()
-      .from(reports)
-      .where(eq(reports.id, reportId))
-      .limit(1);
+    // Combine original query with answers
+    const enhancedQuery = `
+      Original query: ${report.topic}
+      Additional context from user:
+      ${answers.map((answer, i) => `${i + 1}. ${answer}`).join('\n')}
+    `.trim();
 
-    if (!report) {
-      console.error(`Report ${reportId} not found`);
-      activeJobs.delete(reportId);
-      return;
-    }
+    console.log('Enhanced query:', enhancedQuery);
 
-    // Create output manager
-    const output = new OutputManager();
-
-    // Combine all information for deep research
-    const combinedQuery = `
-Initial Query: ${report.topic}
-Description: ${report.description}
-Follow-up Questions and Answers:
-${options.followUpQuestions.map((q, i) => `Q: ${q}\nA: ${options.answers[i]}`).join('\n')}
-`;
-
-    // Update the report to show we're starting research
-    await db
-      .update(reports)
-      .set({
-        content: `## Research Starting\n\nPreparing to research: ${report.topic}`,
-        updated_at: new Date()
-      })
-      .where(eq(reports.id, reportId));
-
-    // Start the research process
+    // Start deep research with progress tracking
     const { learnings, visitedUrls } = await deepResearch({
-      query: combinedQuery,
-      breadth: options.breadth,
-      depth: options.depth,
+      query: enhancedQuery,
+      breadth,
+      depth,
+      searchProvider: {
+        provider: 'jina',
+        apiKey: process.env.JINA_API_KEY
+      },
       onProgress: async (progress) => {
-        if (isCancelled) return;
+        const progressContent = progress.currentQuery
+          ? `## Research in Progress\n\nCurrently processing: ${progress.currentQuery}`
+          : '## Research in Progress\n\nInitializing next query...';
 
-        // Calculate percentage based on completed queries and total queries
-        const percentage = (progress.completedQueries / progress.totalQueries) * 100;
+        const progressMetadata = {
+          ...defaultMetadata,
+          currentDepth: progress.currentDepth || 0,
+          totalDepth: progress.totalDepth || depth,
+          currentBreadth: progress.currentBreadth || 0,
+          totalBreadth: progress.totalBreadth || breadth,
+          currentQuery: progress.currentQuery || '',
+          totalQueries: progress.totalQueries || 0,
+          completedQueries: progress.completedQueries || 0,
+          lastUpdated: new Date().toISOString()
+        };
 
-        // Update the report with progress information
         await db
           .update(reports)
           .set({
-            content: `## Research in Progress (${Math.round(percentage)}%)\n\n${progress.currentQuery || 'Initializing...'}`,
+            content: progressContent,
+            metadata: JSON.stringify(progressMetadata),
             updated_at: new Date()
           })
           .where(eq(reports.id, reportId));
       }
     });
 
-    if (isCancelled) return;
+    console.log(`Research complete. Writing final report...`);
 
-    // Generate the final report
-    const finalReport = await writeFinalReport({
-      prompt: combinedQuery,
+    // Generate final report
+    const content = await writeFinalReport({
+      prompt: enhancedQuery,
       learnings,
       visitedUrls
     });
 
-    // Update the report with the final content
+    // Final metadata with completion information
+    const completionMetadata = {
+      ...defaultMetadata,
+      currentDepth: depth,
+      totalDepth: depth,
+      currentBreadth: breadth,
+      totalBreadth: breadth,
+      currentQuery: '',
+      totalQueries: learnings.length,
+      completedQueries: learnings.length,
+      completedAt: new Date().toISOString(),
+      totalLearnings: learnings.length,
+      totalSources: visitedUrls.length
+    };
+
+    // Update report with content
     await db
       .update(reports)
       .set({
-        content: finalReport,
+        content: content || '## No Results\n\nNo research results were generated.',
         status: 'completed',
+        metadata: JSON.stringify(completionMetadata),
         updated_at: new Date()
       })
       .where(eq(reports.id, reportId));
 
-    console.log(`Research with answers for report ${reportId} completed`);
-  } catch (error) {
-    console.error(`Error in research with answers for report ${reportId}:`, error);
+    console.log('Report updated successfully');
+  } catch (error: any) {
+    console.error('Error during research:', error);
 
-    // Update the report with the error
+    // Error metadata
+    const errorMetadata = {
+      ...defaultMetadata,
+      error: error.message || 'Unknown error',
+      errorTimestamp: new Date().toISOString(),
+      errorStack: error.stack || ''
+    };
+
+    // Update report status to error
     await db
       .update(reports)
       .set({
-        content: `## Error\n\nAn error occurred while generating this report: ${error}`,
+        content: `## Error\n\nAn error occurred while generating this report: ${error.message || 'Unknown error'}`,
         status: 'error',
+        metadata: JSON.stringify(errorMetadata),
         updated_at: new Date()
       })
       .where(eq(reports.id, reportId));
-  } finally {
-    activeJobs.delete(reportId);
+
+    throw error;
   }
 }
 

@@ -1,4 +1,3 @@
-import FirecrawlApp, { type SearchResponse } from '@mendable/firecrawl-js';
 import { generateObject } from 'ai';
 import { compact } from 'lodash-es';
 import pLimit from 'p-limit';
@@ -7,6 +6,7 @@ import { z } from 'zod';
 import { o3MiniModel, trimPrompt } from './ai/providers';
 import { OutputManager } from './output-manager';
 import { systemPrompt } from './prompt';
+import { createSearchProvider, type SearchProviderConfig } from './search';
 
 // Initialize output manager for coordinated console/progress output
 const output = new OutputManager();
@@ -34,13 +34,6 @@ type ResearchResult = {
 // increase this if you have higher API rate limits
 const ConcurrencyLimit = 2;
 
-// Initialize Firecrawl with optional API key and optional base url
-
-const firecrawl = new FirecrawlApp({
-	apiKey: process.env.FIRECRAWL_KEY ?? '',
-	apiUrl: process.env.FIRECRAWL_BASE_URL
-});
-
 // take en user query, return a list of SERP queries
 async function generateSerpQueries({
 	query,
@@ -49,7 +42,6 @@ async function generateSerpQueries({
 }: {
 	query: string;
 	numQueries?: number;
-
 	// optional, if provided, the research will continue from the last learning
 	learnings?: string[];
 }) {
@@ -107,16 +99,16 @@ async function processSerpResult({
 	numFollowUpQuestions = 3
 }: {
 	query: string;
-	result: SearchResponse;
+	result: any;
 	numLearnings?: number;
 	numFollowUpQuestions?: number;
 }) {
 	log(`Processing SERP results for query: "${query}"`);
 	log(`Result contains ${result.data.length} items`);
 
-	const contents = compact(result.data.map((item) => item.markdown)).map((content: string) =>
-		trimPrompt(content, 25_000)
-	);
+	const contents = compact(result.data.map((item: any) => item.markdown))
+		.filter((content): content is string => typeof content === 'string')
+		.map((content: string) => trimPrompt(content, 25_000));
 	log(`Extracted ${contents.length} markdown contents from results`);
 
 	if (contents.length === 0) {
@@ -200,6 +192,7 @@ export async function deepResearch({
 	query,
 	breadth,
 	depth,
+	searchProvider = { provider: 'jina' as const },
 	learnings = [],
 	visitedUrls = [],
 	onProgress
@@ -207,12 +200,16 @@ export async function deepResearch({
 	query: string;
 	breadth: number;
 	depth: number;
+	searchProvider?: SearchProviderConfig;
 	learnings?: string[];
 	visitedUrls?: string[];
 	onProgress?: (progress: ResearchProgress) => void;
 }): Promise<ResearchResult> {
 	log(`Starting deep research with query: "${query}"`);
 	log(`Parameters: breadth=${breadth}, depth=${depth}, existing learnings=${learnings.length}`);
+	log(`Using search provider: ${searchProvider.provider}`);
+
+	const provider = createSearchProvider(searchProvider);
 
 	const progress: ResearchProgress = {
 		currentDepth: depth,
@@ -259,7 +256,7 @@ export async function deepResearch({
 			limit(async () => {
 				try {
 					log(`Executing search ${index + 1}/${serpQueries.length}: "${serpQuery.query}"`);
-					const result = await firecrawl.search(serpQuery.query, {
+					const result = await provider.search(serpQuery.query, {
 						timeout: 15000,
 						limit: 5,
 						scrapeOptions: { formats: ['markdown'] }
@@ -278,6 +275,7 @@ export async function deepResearch({
 						result,
 						numFollowUpQuestions: newBreadth
 					});
+
 					log(`Extracted ${newLearnings.learnings.length} learnings and ${newLearnings.followUpQuestions.length} follow-up questions`);
 
 					const allLearnings = [...learnings, ...newLearnings.learnings];
@@ -303,6 +301,7 @@ export async function deepResearch({
 							query: nextQuery,
 							breadth: newBreadth,
 							depth: newDepth,
+							searchProvider,
 							learnings: allLearnings,
 							visitedUrls: allUrls,
 							onProgress
